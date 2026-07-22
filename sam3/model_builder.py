@@ -5,7 +5,7 @@
 import os
 from typing import Optional
 
-import pkg_resources
+import importlib.resources #replaced pkg_resources in Python>=3.12
 import torch
 import torch.nn as nn
 from huggingface_hub import hf_hub_download
@@ -596,9 +596,7 @@ def build_sam3_image_model(
         A SAM3 image model
     """
     if bpe_path is None:
-        bpe_path = pkg_resources.resource_filename(
-            "sam3", "assets/bpe_simple_vocab_16e6.txt.gz"
-        )
+        bpe_path = importlib.resources.files("sam3") / "assets/bpe_simple_vocab_16e6.txt.gz"
 
     # Create visual components
     compile_mode = "default" if compile else None
@@ -607,7 +605,8 @@ def build_sam3_image_model(
     )
 
     # Create text components
-    text_encoder = _create_text_encoder(bpe_path)
+    with importlib.resources.as_file(bpe_path) as path:
+        text_encoder = _create_text_encoder(path)
 
     # Create visual-language backbone
     backbone = _create_vl_backbone(vision_encoder, text_encoder)
@@ -695,16 +694,15 @@ def build_sam3_video_model(
         Sam3VideoInferenceWithInstanceInteractivity: The instantiated dense tracking model
     """
     if bpe_path is None:
-        bpe_path = pkg_resources.resource_filename(
-            "sam3", "assets/bpe_simple_vocab_16e6.txt.gz"
-        )
+        bpe_path = importlib.resources.files("sam3") / "assets/bpe_simple_vocab_16e6.txt.gz"
 
     # Build Tracker module
     tracker = build_tracker(apply_temporal_disambiguation=apply_temporal_disambiguation)
 
     # Build Detector components
     visual_neck = _create_vision_backbone()
-    text_encoder = _create_text_encoder(bpe_path)
+    with importlib.resources.as_file(bpe_path) as path:
+        text_encoder = _create_text_encoder(path)
     backbone = SAM3VLBackbone(scalp=1, visual=visual_neck, text=text_encoder)
     transformer = _create_sam3_transformer(has_presence_token=has_presence_token)
     segmentation_head: UniversalSegmentationHead = _create_segmentation_head()
@@ -1105,9 +1103,7 @@ def build_sam3_multiplex_video_predictor(
         Sam3MultiplexVideoPredictor: The fully-initialized predictor
     """
     if bpe_path is None:
-        bpe_path = pkg_resources.resource_filename(
-            "sam3", "assets/bpe_simple_vocab_16e6.txt.gz"
-        )
+        bpe_path = importlib.resources.files("sam3") / "assets/bpe_simple_vocab_16e6.txt.gz"
 
     from sam3.model.sam3_multiplex_base import Sam3MultiplexPredictorWrapper
     from sam3.model.sam3_multiplex_detector import Sam3MultiplexDetector
@@ -1141,7 +1137,8 @@ def build_sam3_multiplex_video_predictor(
     tri_neck = _create_multiplex_tri_backbone(
         compile_mode=None, use_fa3=use_fa3, use_rope_real=use_rope_real
     )
-    text_encoder = _create_text_encoder(bpe_path)
+    with importlib.resources.as_file(bpe_path) as path:
+        text_encoder = _create_text_encoder(path)
     backbone = SAM3VLBackboneTri(scalp=0, visual=tri_neck, text=text_encoder)
     transformer = _create_sam3_transformer(use_fa3=use_fa3)
     segmentation_head = _create_segmentation_head(use_fa3=use_fa3)
