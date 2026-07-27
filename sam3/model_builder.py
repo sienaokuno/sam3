@@ -6,6 +6,7 @@ import os
 from typing import Optional
 
 import importlib.resources #replaced pkg_resources in Python>=3.12
+from pathlib import Path
 import torch
 import torch.nn as nn
 from huggingface_hub import hf_hub_download
@@ -597,6 +598,9 @@ def build_sam3_image_model(
     """
     if bpe_path is None:
         bpe_path = importlib.resources.files("sam3") / "assets/bpe_simple_vocab_16e6.txt.gz"
+    else:
+        bpe_path = Path(bpe_path)
+
 
     # Create visual components
     compile_mode = "default" if compile else None
